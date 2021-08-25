@@ -5,6 +5,8 @@ from data_provider import DataProvider
 from config import Config
 from waveanalysispanel import WaveAnalysisPanel
 from table_1 import Table1
+from figures import Figures
+
 
 if __name__ == '__main__':
     config = Config(os.path.dirname(os.path.realpath(__file__)))
@@ -26,7 +28,10 @@ if __name__ == '__main__':
         except KeyboardInterrupt:
             exit()
 
-    wave_analysis_panel = WaveAnalysisPanel(config, data_provider, epidemic_wave_classifier.summary_output).get_epi_panel()
+    wave_analysis_panel = WaveAnalysisPanel(
+        config, data_provider, epidemic_wave_classifier.summary_output).get_epi_panel()
 
     table_1 = Table1(config, wave_analysis_panel)
     table_1.table_1()
+    figures = Figures(config, wave_analysis_panel, data_provider)
+    figures.main()

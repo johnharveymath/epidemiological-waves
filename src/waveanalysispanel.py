@@ -29,13 +29,6 @@ class WaveAnalysisPanel:
     # waiting implementation
     def get_epi_panel(self):
         print('Preparing Epidemiological Results Table')
-        '''epidemiology_static = pd.DataFrame(
-            columns=['countrycode', 'country', 'class', 'population',
-                     't0', 't0_relative', 't0_1_dead','t0_5_dead',
-                     't0_10_dead', 'peak_1', 'peak_2', 'date_peak_1',
-                     'date_peak_2', 'first_wave_start', 'first_wave_end', 'duration_first_wave',
-                     'second_wave_start', 'second_wave_end','last_confirmed', 'last_dead',
-                     'testing_available','peak_1_cfr','peak_2_cfr', 'dead_class','tests_class'])'''
         epidemiology_panel = pd.DataFrame()
         # wave parameters marked a w
         for country in tqdm(np.sort(self.data_provider.epidemiology_series['countrycode'].unique()),
