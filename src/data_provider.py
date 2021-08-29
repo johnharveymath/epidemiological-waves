@@ -228,7 +228,8 @@ class DataProvider:
             'days_since_t0_1_dead': np.empty(0),
             'days_since_t0_5_dead': np.empty(0),
             'days_since_t0_10_dead': np.empty(0),
-            'case_death_ascertainment': np.empty(0)
+            'case_death_ascertainment': np.empty(0),
+            'cfr_smooth': np.empty(0)
         }
 
         for country in tqdm(np.sort(epidemiology['countrycode'].unique()),
@@ -251,6 +252,16 @@ class DataProvider:
             else:
                 ys = epi_data[['new_per_day', 'date']].rolling(window=self.ma_window, on='date').mean()['new_per_day']
                 zs = epi_data[['dead_per_day', 'date']].rolling(window=self.ma_window, on='date').mean()['dead_per_day']
+            # cfr smooth
+            cfr_smooth = np.repeat(np.nan, len(epi_data))
+            case_series = ys.copy()
+            if len(case_series[~pd.isnull(case_series)]) > self.config.debug_death_lag:
+                case_series = case_series[0:len(case_series) - self.config.debug_death_lag].reset_index(drop=True)
+                deaths_series = zs
+                deaths_series = deaths_series[self.config.debug_death_lag:].reset_index(drop=True)
+                cfr_smooth[self.config.debug_death_lag:] = deaths_series / case_series
+                cfr_smooth[cfr_smooth > 1] = np.nan
+
             # preparing testing data based metrics
             if len(tst_data) > 1:
                 tests = epi_data[['date']].merge(
@@ -355,6 +366,8 @@ class DataProvider:
                 (epidemiology_series['days_since_t0_10_dead'], days_since_t0_10_dead))
             epidemiology_series['case_death_ascertainment'] = np.concatenate(
                 (epidemiology_series['case_death_ascertainment'], case_death_ascertainment))
+            epidemiology_series['cfr_smooth'] = np.concatenate(
+                (epidemiology_series['cfr_smooth'], cfr_smooth))
             continue
 
         epidemiology_series = pd.DataFrame.from_dict(epidemiology_series)

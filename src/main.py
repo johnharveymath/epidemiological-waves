@@ -12,7 +12,7 @@ if __name__ == '__main__':
     config = Config(os.path.dirname(os.path.realpath(__file__)))
 
     data_provider = DataProvider(config)
-    data_provider.fetch_data(use_cache=True)
+    data_provider.fetch_data(use_cache=False)
     countries = data_provider.get_countries()
 
     epidemic_wave_classifier = EpidemicWaveClassifier(config, data_provider)
