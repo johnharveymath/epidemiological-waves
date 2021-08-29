@@ -57,14 +57,6 @@ figure_4a_agg <- aggregate(figure_4a_data[c("new_per_day_smooth")],
 figure_4a_agg <- plyr::rename(figure_4a_agg, c("Group.1"="State","Group.2"="date"))
 
 # Figure 4b processing
-# Sort by GID and date
-figure_4b_data <- figure_4b_data[order(figure_4b_data$gid, figure_4b_data$date),]
-# Compute new cases per day as difference between daily case total
-figure_4b_data[-1,"new_cases"] <- diff(figure_4b_data$cases)
-# Remove first day of each GID as it does not have a value for new cases
-figure_4b_data <- figure_4b_data[duplicated(figure_4b_data$gid),]
-# Set any negative values for new cases to 0
-figure_4b_data[figure_4b_data$new_cases<0,"new_cases"] <- 0
 # Compute new cases per 10000 popuation
 figure_4b_data$new_cases_per_10k <- 10000*figure_4b_data$new_cases/figure_4b_data$Population
 

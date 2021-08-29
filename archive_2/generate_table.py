@@ -816,6 +816,12 @@ usa_populations = pd.read_csv('https://github.com/CSSEGISandData/COVID-19/raw/ma
 #Pulling Case Data from NYT DB (Indexed by FIPS)
 usa_cases = pd.read_csv('https://github.com/nytimes/covid-19-data/raw/master/us-counties.csv')
 
+#Calculate number of new cases per day
+usa_cases = usa_cases.sort_values(by=['fips','date']).reset_index(drop=True)
+for fips in tqdm(usa_cases['fips'].unique()):
+    usa_cases.loc[usa_cases['fips']==fips,'new_cases'] = usa_cases.loc[usa_cases['fips']==fips,'cases'].diff()
+usa_cases.loc[usa_cases['new_cases']<0,'new_cases'] = 0
+
 #Get only the peak dates
 dates = ['2020-04-08','2020-07-21','2021-01-04']
 usa_cases = usa_cases.loc[usa_cases['date'].isin(dates),]
@@ -828,12 +834,13 @@ figure_4 = usa_cases.merge(translation_csv[['input_adm_area_1','input_adm_area_2
     left_on=['state','county'], right_on=['input_adm_area_1','input_adm_area_2'], how='left').merge(
     usa_populations[['FIPS','Population']], left_on=['fips'], right_on=['FIPS'], how='left')
 
-figure_4 = figure_4[['date', 'gid', 'fips', 'cases', 'Population']].sort_values(by=['gid','date']).dropna(subset=['gid'])
+figure_4 = figure_4[['date', 'gid', 'fips', 'cases', 'new_cases', 'Population']].dropna(subset=['gid'])
 figure_4 = usa_map[['gid','geometry']].merge(figure_4, on=['gid'], how='right')
 
 if SAVE_CSV:
     #figure_4.to_csv(CSV_PATH + 'figure_4.csv', sep=';')
     figure_4.astype({'geometry': str}).to_csv(CSV_PATH + 'figure_4.csv', sep=';')
+    
 #%% -------------------------------------------------------------------------------------------------------------------- #
   
 '''
