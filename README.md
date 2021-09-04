@@ -6,7 +6,7 @@ It provides a Python package `wavefinder` in the directory `src/wavefinder` to i
 
 This is used by the Python modules in the `src` directory to classify epidemic waves in time series of cases of and deaths due to COVID-19 and create a csv file summarising the results.
 
-The `R` directory contains R code used to analyse the results. The `Figures` module in src prepares the csv files used by the R scripts to generate all figures used in the paper. 
+The `R` directory contains R code used to analyse the results. The `Figures` module in `src` prepares the csv files used by the R scripts to generate all figures used in the paper. 
 
 # How to run
 
