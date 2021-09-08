@@ -117,9 +117,9 @@ class Figures:
         map_data = gpd.GeoDataFrame.from_postgis(sql_command, conn, geom_col='geometry')
         # get figure 1a
         figure_1a = self.data_provider.epidemiology_series[
-            ['countrycode', 'country', 'new_cases_per_rel_constant', 'new_deaths_per_rel_constant']]
+            ['countrycode', 'date', 'new_per_day', 'new_cases_per_rel_constant', 'dead_per_day', 'new_deaths_per_rel_constant']]
         # get figure 1b
-        figure_1b = self.epi_panel[['countrycode', 't0_10_dead', 'class', 'population']].merge(
+        figure_1b = self.epi_panel[['countrycode', 't0_10_dead', 'class', 'class_coarse', 'population']].merge(
             self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'], how='left')
         figure_1b['days_to_t0_10_dead'] = (figure_1b['t0_10_dead'] - start_date).apply(lambda x: x.days)
         figure_1b = figure_1b.merge(map_data[['countrycode', 'geometry']], on=['countrycode'], how='left')

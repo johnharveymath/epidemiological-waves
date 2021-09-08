@@ -20,3 +20,5 @@ cache/epidemiology_table.csv
 cache/epidemiology_series.json
 cache/epidemiology_series.csv
 *.pyc
+*.csv
+*.csv
