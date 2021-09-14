@@ -1,6 +1,7 @@
 library(dplyr)
 library(purrr)
 library(magrittr)
+library(ggplot2)
 library(scales)
 
 x <- read.csv("data/2020-09-15/gni_data.csv",

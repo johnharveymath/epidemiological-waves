@@ -2,7 +2,7 @@ library(magrittr)
 library(dplyr)
 library(reshape2)
 library(ggplot2)
-
+library(scales)
 
 y <- read.csv("data/2020-09-13/fig1c-t0-epi-state.csv") %>%
   filter(class == 4) %>%

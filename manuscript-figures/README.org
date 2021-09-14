@@ -1,22 +1,17 @@
-* Figures for *MANUSCRIPT TITLE*
+#+title: Figure 1
 
-The colour pallete used comes from [[https://colorbrewer2.org/#type=sequential&scheme=YlGnBu&n=3][colorbrewer2]].
+
+The colour palette used comes from [[https://colorbrewer2.org/#type=sequential&scheme=YlGnBu&n=3][colorbrewer2]].
+
+To prepare the data for each visualisation run the corresponding R script.
 
 ** Figure 1 \(T_0\) Map
 
+#+ATTR_ORG: :width 600
 [[./output/png/figure-1-t0-map.png]]
 
-=figure-1-t0-map.json= produces a choropleth showing the \(T_0\) across the
+=figure-1-t0-map.R= produces a choropleth showing the \(T_0\) across the
 globe.
-
-** Figure 1 \(T_0\) Wave State Boxplot
-
-[[./output/png/figure-1-t0-wave-state-boxplot.png]]
-
-=figure-1-t0-wave-state-boxplot.json= produces the boxplot of the \(T_0\)
-stratified by the epidemic wave state. Due to a bug in Vega-Lite we use the
-script =figure-1-t0-wave-state-boxplot.R= to compute the statistics of the
-boxplot and write them to an appropriate JSON file.
 
 ** Figure 1 Cases And Deaths
 
