@@ -1,4 +1,3 @@
-
 library(magrittr)
 library(dplyr)
 library(reshape2)
@@ -15,10 +14,20 @@ x <- read.csv("data/2020-09-13/figure_5.csv") %>%
   mutate(date = as.Date(date)) %>%
   melt(id.vars = c("countrycode", "date"))
 
+facet_labels <- c(
+  dead_per_day = "Deaths",
+  new_per_day = "Confirmed cases"
+)
 
-writeLines(text = as.character(
-             jsonlite::toJSON(lapply(1:nrow(x), function(ix) as.list(x[ix,])),
-                              auto_unbox = TRUE,
-                              pretty = TRUE)
-           ),
-           con = "cases-and-deaths-data.json")
+g <- ggplot(data = filter(x, countrycode != "USA"), mapping = aes(x = date, y = value)) +
+ geom_line() +
+ geom_smooth(method = "loess", span = 0.1) +
+  facet_wrap(~variable, scales = "free_y", labeller = labeller(variable = facet_labels)) +
+ scale_y_sqrt() +
+ scale_x_date(labels = label_date_short()) +
+ labs(y = NULL, x = NULL) +
+  theme_classic()  +
+theme(strip.background = element_blank(),
+strip.text = element_text(face = "bold"))
+
+ggsave(filename = "./output/png/figure-1-cases-and-deaths.png")

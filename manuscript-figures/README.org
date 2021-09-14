@@ -20,11 +20,11 @@ boxplot and write them to an appropriate JSON file.
 
 ** Figure 1 Cases And Deaths
 
+#+ATTR_ORG: :width 600
 [[./output/png/figure-1-cases-and-deaths.png]]
 
-=figure-1-cases-and-deaths.json= produces the time series of confirmed cases and
-deaths along with the LOESS smoothing. To get the data into a useful format
-there is the script =figure-1-cases-and-deaths.R=
+=figure-1-cases-and-deaths.R= produces the time series of confirmed cases and
+deaths along with the LOESS smoothing.
 
 ** Figure 1 \(T_0\) and GNI per capita
 
