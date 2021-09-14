@@ -28,11 +28,14 @@ there is the script =figure-1-cases-and-deaths.R=
 
 ** Figure 1 \(T_0\) and GNI per capita
 
+#+ATTR_ORG: :width 600
 [[./output/png/figure-1-t0-and-gni.png]]
 
-=figure-1-t0-and-gni.json= produces the scatter plot looking at GNI per capita
-as a predictor of \(T_0\). The regression is a power law, but on the log-log
-scale it appears linear. The outlier at 25 days is from China.
+=figure-1-t0-and-gni.R= produces the scatter plot looking at GNI per capita as a
+predictor of \(T_0\). The regression is a power law, but on the log-log scale it
+appears linear. There is a summary of the model fit in the file
+=output/txt/figure-1-t0-and-gni.txt= and the actual figure appears in
+=output/png/figure-1-t0-and-gni.png=. The outlier at 25 days is from China.
 
 #+BEGIN_SRC
 "CHN",15187.1541555233,25 
