@@ -1,9 +1,8 @@
 #+title: Figure 1
 
-
-The colour palette used comes from [[https://colorbrewer2.org/#type=sequential&scheme=YlGnBu&n=3][colorbrewer2]].
-
-To prepare the data for each visualisation run the corresponding R script.
+To make these figures use the =run.sh= script, to remove old figures use
+=clean.sh= and if you want to avoid needing to install all the packages use the
+=shell.nix= file to create a suitable shell.
 
 ** Figure 1 \(T_0\) Map
 
