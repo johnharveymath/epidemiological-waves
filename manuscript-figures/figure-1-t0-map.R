@@ -14,9 +14,8 @@ t0_df <- read.table(
   sep = ";",
   stringsAsFactors = FALSE
 ) %>%
-select(countrycode, days_to_t0_10_dead) %>%
-rename(GID_0 = countrycode, days_to_t0 = days_to_t0_10_dead) %>%
-mutate(log_days_to_t0 = log(days_to_t0))
+  select(countrycode, days_to_t0_10_dead) %>%
+  rename(GID_0 = countrycode, days_to_t0 = days_to_t0_10_dead)
 
 ## read in the geometry of each region and link it to the data via the GID_0.
 world_sf <- topojson_read("data/2020-09-13/gadm36_0.json")
@@ -33,10 +32,11 @@ g <- ggplot() +
     size = 0.1
   ) +
   scale_fill_fermenter(
-breaks = t0_breaks,
- type = "seq",
- direction = -1,
- palette = "RdPu") +
+    breaks = t0_breaks,
+    type = "seq",
+    direction = -1,
+    palette = "RdPu"
+  ) +
   labs(fill = "Days until epidemic\nthreshold reached") +
   theme_void() +
   theme(
