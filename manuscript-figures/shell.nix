@@ -21,6 +21,7 @@ in with pkgs; {
       protolite
       V8
       reshape2
+      zoo
     ];
    shellHook = ''
              printf "\n\nWelcome to a reproducible R shell :)\n\n"
