@@ -53,10 +53,11 @@ g <- ggplot() +
     legend.text = element_text(size = 5)
   )
 
+## Save this to 70% height of a landscape A5 page.
 ggsave(
   filename = "./output/png/figure-1-t0-map.png",
   plot = g,
-  height = 10,
-  width = 17,
+  height = 14.8 * 0.7,
+  width = 21.0,
   units = "cm"
 )

@@ -41,7 +41,13 @@ g <- ggplot(
   theme_classic() +
   theme(axis.title = element_text(face = "bold"))
 
-ggsave(filename = "./output/png/figure-1-t0-and-gni.png")
+## Save this to 50% height and 30% width of a landscape A5 page.
+ggsave(filename = "./output/png/figure-1-t0-and-gni.png",
+plot = g,
+height = 0.5 * 14.8,
+width = 0.3 * 21.0,
+units = "cm"
+)
 
 sink("./output/txt/figure-1-t0-and-gni.txt")
 summary(lm(log(days_to_t0) ~ log(gni_per_capita), z))

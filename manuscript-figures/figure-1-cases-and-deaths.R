@@ -32,4 +32,10 @@ g <- ggplot(data = filter(x, countrycode != "USA"), mapping = aes(x = date, y = 
     strip.text = element_text(face = "bold")
   )
 
-ggsave(filename = "./output/png/figure-1-cases-and-deaths.png")
+## Save this to 50% height and 70% width of a landscape A5 page.
+ggsave(filename = "./output/png/figure-1-cases-and-deaths.png",
+       plot = g,
+       height = 0.5 * 14.8,
+       width = 0.7 * 21.0,
+       units = "cm"
+)
