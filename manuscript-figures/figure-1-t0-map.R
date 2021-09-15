@@ -8,25 +8,21 @@ library(geojsonio)
 
 
 ## read in the t_0 data to colour the regions with.
-t0_df <- read.csv(
-  "data/2020-09-13/fig1a-t0-days.csv",
+t0_df <- read.table(
+  file = "data/2021-09-15/figure_1b.csv",
+  header = TRUE,
+  sep = ";",
   stringsAsFactors = FALSE
-) %>% rename(GID_0 = countrycode)
-
+) %>%
+select(countrycode, days_to_t0_10_dead) %>%
+rename(GID_0 = countrycode, days_to_t0 = days_to_t0_10_dead) %>%
+mutate(log_days_to_t0 = log(days_to_t0))
 
 ## read in the geometry of each region and link it to the data via the GID_0.
 world_sf <- topojson_read("data/2020-09-13/gadm36_0.json")
 plot_sf <- left_join(world_sf, t0_df, by = "GID_0")
 
-## choose some appropriate values for the colour scale
-t0_range <- range(purrr::discard(.x = plot_sf$days_to_t0, .p = is.na))
-my_breaks <- seq(from = t0_range[1], to = t0_range[2], length = 4)
-colours_hex <- c(
-  "#5e3c99",
-  "#b2abd2",
-  "#fdb863",
-  "#e66101"
-)
+t0_breaks <- round(boxplot.stats(plot_sf$days_to_t0)$stats / 10) * 10
 
 ## make the actual plot and do some preliminary styling.
 g <- ggplot() +
@@ -36,11 +32,11 @@ g <- ggplot() +
     colour = "white",
     size = 0.1
   ) +
-  scale_fill_gradientn(
-    breaks = my_breaks,
-    colors = colours_hex,
-    limits = range(my_breaks)
-  ) +
+  scale_fill_fermenter(
+breaks = t0_breaks,
+ type = "seq",
+ direction = -1,
+ palette = "RdPu") +
   labs(fill = "Days until epidemic\nthreshold reached") +
   theme_void() +
   theme(
@@ -53,11 +49,15 @@ g <- ggplot() +
     legend.text = element_text(size = 5)
   )
 
-## Save this to 70% height of a landscape A5 page.
-ggsave(
-  filename = "./output/png/figure-1-t0-map.png",
-  plot = g,
-  height = 14.8 * 0.7,
-  width = 21.0,
-  units = "cm"
-)
+if (interactive()) {
+  print(g)
+} else {
+  ## Save this to 70% height of a landscape A5 page.
+  ggsave(
+    filename = "./output/png/figure-1-t0-map.png",
+    plot = g,
+    height = 14.8 * 0.7,
+    width = 21.0,
+    units = "cm"
+  )
+}
