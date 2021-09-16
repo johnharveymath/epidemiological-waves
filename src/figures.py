@@ -4,6 +4,9 @@ import pandas as pd
 import geopandas as gpd
 import datetime
 import psycopg2
+import matplotlib.pyplot as plt
+import seaborn as sns
+from shapely import wkt
 from tqdm import tqdm
 from config import Config
 from data_provider import DataProvider
@@ -12,6 +15,7 @@ from data_provider import DataProvider
 class Figures:
     def __init__(self, config: Config, epi_panel: pd.core.frame.DataFrame, data_provider: DataProvider):
         self.data_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data')
+        self.plot_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'plots')
         self.config = config
         self.data_provider = data_provider
         self.epi_panel = epi_panel
@@ -123,13 +127,56 @@ class Figures:
             self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'], how='left')
         figure_1b['days_to_t0_10_dead'] = (figure_1b['t0_10_dead'] - start_date).apply(lambda x: x.days)
         figure_1b = figure_1b.merge(map_data[['countrycode', 'geometry']], on=['countrycode'], how='left')
-        # save CSV files
+        # cache CSV files for later use
         figure_1a.to_csv(os.path.join(self.data_dir, 'figure_1a.csv'))
         figure_1b.astype({'geometry': str}).to_csv(os.path.join(self.data_dir, 'figure_1b.csv'), sep=';')
-        return
+
+        # panel A
+        panel_a = self.data_provider.epidemiology_series[
+            ['countrycode', 'date', 'days_since_t0_10_dead', 'new_cases_per_rel_constant', 'new_deaths_per_rel_constant']].merge(
+            self.epi_panel[['countrycode', 't0_10_dead', 'class', 'population']], on=['countrycode'], how='left').merge(
+            self.data_provider.wbi_table[['countrycode', 'gni_per_capita']], on=['countrycode'], how='left')
+        panel_a = panel_a[panel_a['class'] >= 3]
+        # cases
+        cases = panel_a[['date', 'countrycode', 'new_cases_per_rel_constant']].groupby('date').agg(
+            min=pd.NamedAgg(column='new_cases_per_rel_constant', aggfunc='min'),
+            max=pd.NamedAgg(column='new_cases_per_rel_constant', aggfunc='max'),
+            median=pd.NamedAgg(column='new_cases_per_rel_constant', aggfunc=np.median),
+        )
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+        sns.lineplot(data=cases.reset_index().dropna(), x='date', y='median', ax=ax, color='darkred', linewidth=3)
+        ax.set(xlabel='Date', ylabel='Confirmed Cases')
+        ax.fill_between(cases.reset_index().dropna()['date'].values, cases.reset_index().dropna()['max'].values,
+                        cases.reset_index().dropna()['min'].values, alpha=0.3)
+
+        # deaths
+        deaths = panel_a[['date', 'countrycode', 'new_deaths_per_rel_constant']].groupby('date').agg(
+            min=pd.NamedAgg(column='new_deaths_per_rel_constant', aggfunc='min'),
+            max=pd.NamedAgg(column='new_deaths_per_rel_constant', aggfunc='max'),
+            median=pd.NamedAgg(column='new_deaths_per_rel_constant', aggfunc=np.median),
+        )
+
+
+
+
+        # panel B
+        # panel C
+        panel_c = map_data[['countrycode', 'geometry']].merge(
+            figure_1b[['countrycode', 'days_to_t0_10_dead']], on=['countrycode'], how='left')
+
+        cmap = plt.get_cmap('viridis', int(figure_1b['class'].max() - figure_1b['class'].min() + 1))
+        fig, ax = plt.subplots(nrows=1, ncols=1)
+        ax.set_axis_off()
+        panel_c.plot(column='days_to_t0_10_dead', linewidth=0.5, edgecolor='0.5',
+                     legend_kwds={'orientation': 'horizontal', 'label': 'Days to T0'},
+                     figsize=(20, 7), legend=True,
+                     missing_kwds={"color": "lightgrey", "edgecolor": "black"})
+        plt.axis('equal')
+
+        return figure_1a, figure_1b
 
     def _figure_2(self):
-        countries = ['ITA', 'FRA', 'USA']
+        countries = ['ITA', 'FRA', 'USA', 'ZMB','GBR','GHA','CRI']
         figure_2 = self.data_provider.epidemiology_series.loc[
             self.data_provider.epidemiology_series['countrycode'].isin(countries),
             ['country', 'countrycode', 'date', 'new_per_day', 'new_per_day_smooth',
