@@ -17,6 +17,7 @@ class EpidemicWaveClassifier:
         self.data_provider = data_provider
         self.prepare_output_dirs(self.config.plot_path)
         self.summary_output = dict()
+        self.deaths_summary_output = dict()
 
     @staticmethod
     def prepare_output_dirs(path: str):
@@ -70,7 +71,15 @@ class EpidemicWaveClassifier:
                               "peak_ind": peak.peak_ind, "y_position": peak.y_position})
             summary.append(peak_data)
         self.summary_output[country] = summary
-
+        # storing death peaks for later use as well
+        summary = []
+        for row, peak in deaths_wavelist.peaks_sub_c.iterrows():
+            death_peak_data = dict({'index': row, 'location': peak.location,
+                                    'date': deaths.iloc[int(peak.location)].date, 'peak_ind': peak.peak_ind,
+                                    'y_position': peak.y_position})
+            summary.append(death_peak_data)
+            continue
+        self.deaths_summary_output[country] = summary
         return cross_validated_cases
 
     def save_summary(self):

@@ -33,5 +33,5 @@ if __name__ == '__main__':
 
     table_1 = Table1(config, wave_analysis_panel)
     table_1.table_1()
-    figures = Figures(config, wave_analysis_panel, data_provider)
+    figures = Figures(config, wave_analysis_panel, data_provider, epidemic_wave_classifier)
     figures.main()

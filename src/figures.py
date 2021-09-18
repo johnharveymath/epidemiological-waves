@@ -10,15 +10,18 @@ from shapely import wkt
 from tqdm import tqdm
 from config import Config
 from data_provider import DataProvider
+from epidemicwaveclassifier import EpidemicWaveClassifier
 
 
 class Figures:
-    def __init__(self, config: Config, epi_panel: pd.core.frame.DataFrame, data_provider: DataProvider):
+    def __init__(self, config: Config, epi_panel: pd.core.frame.DataFrame,
+                 data_provider: DataProvider, epi_classifier: EpidemicWaveClassifier ):
         self.data_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data')
         self.plot_dir = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'plots')
         self.config = config
         self.data_provider = data_provider
         self.epi_panel = epi_panel
+        self.epi_classifier = epi_classifier
         return
 
     def _figure_0(self):
@@ -597,9 +600,28 @@ class Figures:
         figure_3_all.to_csv(os.path.join(self.data_dir, 'figure_3_all.csv'))
         return
 
+    def _figure_deaths(self):
+        out = pd.DataFrame(columns=['countrycode', 'date', 'location', 'dead_per_day_smooth'])
+        for k, v in self.epi_classifier.deaths_summary_output.items():
+            if len(v) == 0:
+                continue
+            for i, wave in enumerate(v):
+                if wave['peak_ind'] == 0:
+                    continue
+                upsert = {}
+                upsert['countrycode'] = k
+                upsert['date'] = wave['date']
+                upsert['location'] = wave['location']
+                upsert['dead_per_day_smooth'] = wave['y_position']
+                out = out.append(upsert, ignore_index=True)
+            continue
+        out.to_csv(os.path.join(self.data_dir, 'figure_dead_all.csv'))
+        return
+
     def main(self):
         self._figure_1()
         self._figure_2()
         self._figure_3()
         self._figure_4()
+        self._figure_deaths()
         return
