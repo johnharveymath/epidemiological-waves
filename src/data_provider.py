@@ -39,6 +39,7 @@ class DataProvider:
         }
         self.config = config
         self.conn = None
+        self.fetcher_list = ['AUS_C1A', 'BEL_LE', 'DEU_JPGG']
 
     def validation(self, file_name, mode):
         '''
@@ -79,30 +80,15 @@ class DataProvider:
         else:
             raise Exception
 
-    def open_db_connection(self):
-        '''
-        INITIALISE SERVER CONNECTION
-        '''
-        self.conn = psycopg2.connect(
-            host='covid19db.org',
-            port=5432,
-            dbname='covid19',
-            user='covid19',
-            password='covid19')
-        return None
-
     def fetch_data(self, use_cache: bool = True):
         self.use_cache = use_cache
         '''
         PULL/PROCESS DATA 
         '''
         self.epidemiology = self.get_epi_table()
-        self.testing = self.get_tst_table()
         self.wbi_table = self.get_wbi_table()
-        self.gsi_table = self.get_gsi_table()
         self.epidemiology_series = self.get_epi_series(
             epidemiology=self.epidemiology,
-            testing=self.testing,
             wbi_table=self.wbi_table)
 
     def get_series(self, country: str, field: str) -> DataFrame:
@@ -142,6 +128,11 @@ class DataProvider:
             # also save the config parameters that were used for validating future loads
             self.validation(file_name, 'save')
 
+    def in_fetcher_list(self, filename):
+        filename = filename.split(".")[0]
+        fetcher = filename.split("-")[-1]
+        return fetcher in self.fetcher_list
+
     def get_epi_table(self) -> DataFrame:
         '''
         PREPARE EPIDEMIOLOGY TABLE
@@ -153,16 +144,24 @@ class DataProvider:
         if epidemiology is not None:
             return epidemiology
 
-        if not self.conn:
-            self.open_db_connection()
-        cols = 'countrycode, country, date, confirmed, dead'
-        sql_command = 'SELECT ' + cols + \
-                      ' FROM epidemiology WHERE adm_area_1 IS NULL AND source = %(source)s AND gid IS NOT NULL'
-        epi_table = pd.read_sql(sql_command, self.conn, params={'source': self.source}) \
-            .sort_values(by=['countrycode', 'date'])
+        epi_table = pd.DataFrame(columns=['countrycode', 'country', 'date', 'confirmed', 'dead'])
+        epi_directory = os.path.join(self.config.oxcovid19db_archive_path, './data-epidemiology')
+        for filename in os.listdir(epi_directory):
+            if self.in_fetcher_list(filename):
+                file = os.path.join(epi_directory, filename)
+                df = pd.read_csv(file, compression='bz2')
+                df['adm_area_1'].replace('', np.nan, inplace=True)
+                df = df.loc[~df['adm_area_1'].notna(), :]
+                df = df[epi_table.columns]
+                epi_table = epi_table.append(df, ignore_index=True)
+        epi_table['date'] = pd.to_datetime(epi_table['date']).dt.date
+        epi_table.dead = epi_table.dead.astype(int)
+        epi_table.sort_values(by=['countrycode', 'date'], inplace=True)
+
         epi_table = epi_table[epi_table['date'] <= self.end_date] \
             .reset_index(drop=True)
         # checks for any duplication/conflicts in the timeseries
+        epi_table.to_csv('take_a_look.csv')
         assert not epi_table[['countrycode', 'date']].duplicated().any()
         epidemiology = pd.DataFrame(columns=[
             'countrycode', 'country', 'date', 'confirmed', 'new_per_day', 'dead_per_day'])
@@ -197,7 +196,7 @@ class DataProvider:
         self.save_to_cache(epidemiology, cache_filename)
         return epidemiology
 
-    def get_epi_series(self, epidemiology: DataFrame, testing: DataFrame, wbi_table: DataFrame) -> DataFrame:
+    def get_epi_series(self, epidemiology: DataFrame, wbi_table: DataFrame) -> DataFrame:
         print('Processing Epidemiological Time Series Data')
         cache_filename = "epidemiology_series"
 
@@ -235,7 +234,6 @@ class DataProvider:
         for country in tqdm(np.sort(epidemiology['countrycode'].unique()),
                             desc='Processing Epidemiological Time Series Data'):
             epi_data = epidemiology[epidemiology['countrycode'] == country]
-            tst_data = testing[testing['countrycode'] == country]
             # we want a master spreadsheet
             tests = np.repeat(np.nan, len(epi_data))
             new_tests = np.repeat(np.nan, len(epi_data))
@@ -262,29 +260,6 @@ class DataProvider:
                 cfr_smooth[self.config.debug_death_lag:] = deaths_series / case_series
                 cfr_smooth[cfr_smooth > 1] = np.nan
 
-            # preparing testing data based metrics
-            if len(tst_data) > 1:
-                tests = epi_data[['date']].merge(
-                    tst_data[['date', 'total_tests']], how='left', on='date')['total_tests'].values
-                # if testing data has new_tests_smoothed, use this
-                if sum(~pd.isnull(tst_data['new_tests_smoothed'])) > 0:
-                    new_tests_smooth = epi_data[['date']].merge(
-                        tst_data[['date', 'new_tests_smoothed']], how='left', on='date')['new_tests_smoothed'].values
-                if sum(~pd.isnull(tst_data['new_tests'])) > 0:
-                    new_tests = epi_data[['date']].merge(
-                        tst_data[['date', 'new_tests']], how='left', on='date')['new_tests'].values
-                else:
-                    new_tests = new_tests_smooth
-
-                if sum(~pd.isnull(tst_data['new_tests_smoothed'])) == 0 and sum(~pd.isnull(tst_data['new_tests'])) > 0:
-                    # if there is no data in new_tests_smoothed, compute 7 day moving average
-                    new_tests_smooth = epi_data[['date']] \
-                        .merge(tst_data[['date', 'new_tests']], how='left', on='date')[['new_tests', 'date']] \
-                        .rolling(window=7, on='date').mean()['new_tests']
-                positive_rate[~np.isnan(new_tests)] = epi_data['new_per_day'][~np.isnan(new_tests)] / new_tests[
-                    ~np.isnan(new_tests)]
-                positive_rate[positive_rate > 1] = np.nan
-                positive_rate_smooth = np.array(pd.Series(positive_rate).rolling(window=7).mean())
             # accessing population data from wbi_table
             population = np.nan if len(wbi_table[wbi_table['countrycode'] == country]['value']) == 0 else \
                 wbi_table[wbi_table['countrycode'] == country]['value'].iloc[0]
@@ -374,32 +349,6 @@ class DataProvider:
         self.save_to_cache(epidemiology_series, cache_filename)
         return epidemiology_series
 
-    def get_gsi_table(self) -> DataFrame:
-        print('Fetching government_response data')
-        cache_filename = "government_response_table"
-
-        government_response = self.load_from_cache(cache_filename)
-        if government_response is not None:
-            return government_response
-
-        '''
-        PREPARE GOVERNMENT RESPONSE TABLE
-        '''
-        if not self.conn:
-            self.open_db_connection()
-        cols = 'countrycode, country, date, stringency_index, ' + ', '.join(list(self.flags.keys()))
-        sql_command = """SELECT """ + cols + """ FROM government_response"""
-        gsi_table = pd.read_sql(sql_command, self.conn) \
-            .sort_values(by=['countrycode', 'date']) \
-            .filter(items=['countrycode', 'country', 'date', 'stringency_index'] +
-                          list(self.flags.keys())) \
-            .reset_index(drop=True)
-        government_response = gsi_table.drop_duplicates(subset=['countrycode', 'date'])
-        assert not government_response[['countrycode', 'date']].duplicated().any()
-
-        self.save_to_cache(government_response, cache_filename)
-        return government_response
-
     def get_wbi_table(self) -> DataFrame:
         print('Fetching world_bank data')
         cache_filename = "world_bank_table"
@@ -411,13 +360,14 @@ class DataProvider:
         '''
         PREPARE WORLD BANK STATISTICS
         '''
-        if not self.conn:
-            self.open_db_connection()
-        sql_command = """SELECT countrycode, indicator_code, value 
-                         FROM world_bank 
-                         WHERE adm_area_1 IS NULL AND indicator_code IN %(indicator_code)s"""
-        raw_wbi_table = pd.read_sql(sql_command, self.conn,
-                                    params={'indicator_code': tuple(self.wb_codes.keys())}).dropna()
+        file = os.path.join(self.config.oxcovid19db_archive_path, './data-statistics/covid19db-world_bank.csv.bz2')
+        df = pd.read_csv(file, compression='bz2')
+        indicator_code = self.wb_codes.keys()
+        mask = df['indicator_code'].isin(indicator_code)
+        df = df[mask]
+        df = df[['countrycode', 'indicator_code', 'value']]
+
+        raw_wbi_table = df.dropna()
         raw_wbi_table = raw_wbi_table.sort_values(by=['countrycode'], ascending=[True]).reset_index(drop=True)
         assert not raw_wbi_table[['countrycode', 'indicator_code']].duplicated().any()
 
@@ -433,55 +383,9 @@ class DataProvider:
                     (raw_wbi_table['countrycode'] == country) &
                     (raw_wbi_table['indicator_code'] == indicator)]['value'].iloc[0]
             wbi_table = wbi_table.append(data, ignore_index=True)
-        wbi_table['net_migration'] = wbi_table['net_migration'].abs()
 
         self.save_to_cache(wbi_table, cache_filename)
         return wbi_table
-
-    def get_tst_table(self) -> DataFrame:
-        print('Preparing testing data')
-        '''
-        PREPARE TESTING TABLE
-        '''
-        cache_filename = "testing_table"
-        testing = self.load_from_cache(cache_filename)
-        if testing is not None:
-            return testing
-
-        owid_source = 'https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/owid-covid-data.csv'
-        tst_table = pd.read_csv(owid_source, parse_dates=['date'])[
-            ['iso_code', 'date', 'total_tests', 'new_tests', 'new_tests_smoothed', 'positive_rate']] \
-            .rename(columns={'iso_code': 'countrycode'})
-        tst_table['date'] = tst_table['date'].apply(lambda x: x.date())
-        tst_table = tst_table[tst_table['date'] <= self.end_date].reset_index(drop=True)
-        # filters out some odd columns in the countrycode column
-        countries = [country for country in tst_table['countrycode'].unique()
-                     if not (pd.isnull(country)) and (len(country) == 3)]
-        # initialise results dataframe
-        testing = pd.DataFrame(
-            columns=['countrycode', 'date', 'total_tests', 'new_tests', 'new_tests_smoothed', 'positive_rate'])
-        for country in tqdm(countries, desc='Pre-processing Testing Data'):
-            data = tst_table[tst_table['countrycode'] == country].reset_index(drop=True)
-            # filter out countries without any testing data
-            if len(data['new_tests'].dropna()) == 0:
-                continue
-            # slice all testing data from when the first and last available date
-            data = data.iloc[
-                   data[(data['new_tests'].notnull()) | (data['new_tests_smoothed'].notnull())].index[0]:
-                   data[(data['new_tests'].notnull()) | (data['new_tests_smoothed'].notnull())].index[-1]].set_index(
-                'date')
-            if len(data) > 0:
-                # reindexing to include all dates available
-                data = data.reindex([x.date() for x in pd.date_range(data.index.values[0], data.index.values[-1])])
-                # nans from reindexing filled in using linear interpolation
-                data[['countrycode']] = data[['countrycode']].fillna(method='backfill')
-                data[['total_tests']] = data[['total_tests']].interpolate(method='linear')
-                data[['new_tests']] = data[['new_tests']].interpolate(method='linear')
-                data.reset_index(inplace=True)
-                testing = pd.concat((testing, data), ignore_index=True)
-
-        self.save_to_cache(testing, cache_filename)
-        return testing
 
 
 class ListDataProvider:
