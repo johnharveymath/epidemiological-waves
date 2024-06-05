@@ -155,7 +155,7 @@ class DataProvider:
                 df = df[epi_table.columns]
                 epi_table = epi_table.append(df, ignore_index=True)
         epi_table['date'] = pd.to_datetime(epi_table['date']).dt.date
-        epi_table.dead = epi_table.dead.astype(int)
+        #epi_table.dead = epi_table.dead.astype('Int64')
         epi_table.sort_values(by=['countrycode', 'date'], inplace=True)
 
         epi_table = epi_table[epi_table['date'] <= self.end_date] \
@@ -184,6 +184,7 @@ class DataProvider:
             # fill na with last acceptable value
             data['new_per_day'] = data['new_per_day'].fillna(method='bfill')
             # similarly interpolate death
+            print(data['dead'].dtype)
             data['dead'] = data['dead'].interpolate(method='linear')
             data['dead_per_day'] = data['dead'].diff()
             # data.reset_index(inplace=True)
