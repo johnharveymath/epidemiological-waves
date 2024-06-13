@@ -46,8 +46,6 @@ class WaveAnalysisPanel:
             data['mortality_rate'] = np.nan
             data['case_rate'] = np.nan
             data['peak_case_rate'] = np.nan
-            data['stringency_response_time'] = np.nan
-            data['total_stringency'] = np.nan
             data['testing_response_time'] = np.nan  # days to reach 10 tests per rel_to
             data['t0'] = np.nan
             data['t0_relative'] = np.nan
@@ -66,9 +64,6 @@ class WaveAnalysisPanel:
 
             country_series = self.data_provider.epidemiology_series[
                 self.data_provider.epidemiology_series['countrycode'] == country].reset_index(drop=True)
-            gsi_series = self.data_provider.gsi_table[
-                self.data_provider.gsi_table['countrycode'] == country].reset_index(
-                drop=True)
             testing_series = self.data_provider.testing[
                 self.data_provider.testing['countrycode'] == country].reset_index(
                 drop=True)
@@ -88,10 +83,6 @@ class WaveAnalysisPanel:
             data['case_rate'] = (data['total_confirmed'] / data['population']) * data['rel_to_constant']
             data['peak_case_rate'] = \
                 (country_series['new_per_day_smooth'].max() / data['population']) * data['rel_to_constant']
-            data['total_stringency'] = np.nan if len(gsi_series) == 0 else np.trapz(
-                y=gsi_series['stringency_index'].dropna(),
-                x=[(a - gsi_series['date'].values[0]).days
-                   for a in gsi_series['date'][~np.isnan(gsi_series['stringency_index'])]])
             data['t0'] = np.nan if len(
                 country_series[country_series['confirmed'] >= self.config.abs_t0_threshold]['date']) == 0 else \
                 country_series[country_series['confirmed'] >= self.config.abs_t0_threshold]['date'].iloc[0]
@@ -116,33 +107,8 @@ class WaveAnalysisPanel:
             if pd.isnull(data['t0_10_dead']):
                 continue
 
-            '''
-            # response time is only defined for the first wave
-            if (len(gsi_series) > 0) and (type(peaks_and_troughs) == pd.core.frame.DataFrame) and len(peaks_and_troughs) 
-            >= 1:
-                sorted_bases = np.sort(
-                    np.concatenate((peaks_and_troughs['left_base'].values, peaks_and_troughs[
-                    'right_base'].values))).astype(int)
-                peak_start = country_series.dropna(
-                        subset=['new_per_day_smooth'])['date'].iloc[
-                        sorted_bases[np.where(sorted_bases <= int(peaks_and_troughs['location'].iloc[0]))][-1]]
-                peak_end = country_series.dropna(
-                        subset=['new_per_day_smooth'])['date'].iloc[
-                        sorted_bases[np.where(sorted_bases >= int(peaks_and_troughs['location'].iloc[0]))][0]]
-                gsi_first_wave = gsi_series[(gsi_series['date'] <= peak_end) & (gsi_series['date'] >= peak_start)]\
-                    .reset_index(drop=True)
-                data['stringency_response_time'] = \
-                    (gsi_first_wave.iloc[gsi_first_wave['stringency_index'].argmax()]['date'] -  data['t0_1_dead']).days
-            elif (len(gsi_series) > 0) and (type(peaks_and_troughs) == pd.core.frame.DataFrame):
-                data['stringency_response_time'] = (gsi_series.iloc[gsi_series['stringency_index'].argmax()]['date']
-                                                   -  data['t0_1_dead']).days
-            else:
-                pass
-            '''
-            if (len(gsi_series) > 0) and (len(gsi_series[gsi_series['c3_cancel_public_events'] == 2]) > 0):
-                data['stringency_response_time'] = \
-                    (gsi_series[gsi_series['c3_cancel_public_events'] == 2]['date'].iloc[0] - data[
-                        't0_10_dead']).days
+
+
 
             if data['testing_available']:
                 data['testing_response_time'] = np.nan if \

@@ -140,9 +140,10 @@ class DataProvider:
         print('Fetching epidemiology data')
         cache_filename = "epidemiology_table"
 
-        epidemiology = self.load_from_cache(cache_filename)
-        if epidemiology is not None:
-            return epidemiology
+        if self.use_cache:
+            epidemiology = self.load_from_cache(cache_filename)
+            if epidemiology is not None:
+                return epidemiology
 
         epi_table = pd.DataFrame(columns=['countrycode', 'country', 'date', 'confirmed', 'dead'])
         epi_directory = os.path.join(self.config.oxcovid19db_archive_path, './data-epidemiology')
@@ -155,16 +156,20 @@ class DataProvider:
                 df = df[epi_table.columns]
                 epi_table = epi_table.append(df, ignore_index=True)
         epi_table['date'] = pd.to_datetime(epi_table['date']).dt.date
-        #epi_table.dead = epi_table.dead.astype('Int64')
+        epi_table.dead = pd.to_numeric(epi_table.dead)
+        epi_table.confirmed = pd.to_numeric(epi_table.confirmed)
         epi_table.sort_values(by=['countrycode', 'date'], inplace=True)
 
         epi_table = epi_table[epi_table['date'] <= self.end_date] \
             .reset_index(drop=True)
         # checks for any duplication/conflicts in the timeseries
-        epi_table.to_csv('take_a_look.csv')
         assert not epi_table[['countrycode', 'date']].duplicated().any()
         epidemiology = pd.DataFrame(columns=[
             'countrycode', 'country', 'date', 'confirmed', 'new_per_day', 'dead_per_day'])
+        epidemiology['date'] = pd.to_datetime(epidemiology['date']).dt.date
+        epidemiology.new_per_day = pd.to_numeric(epidemiology.new_per_day)
+        epidemiology.dead_per_day = pd.to_numeric(epidemiology.dead_per_day)
+        epidemiology.confirmed = pd.to_numeric(epidemiology.confirmed)
         # suppress pandas errors in this loop, where we generate ChainedAssignment warnings
         pd.options.mode.chained_assignment = None
         for country in tqdm(epi_table['countrycode'].unique(), desc='Pre-processing Epidemiological Data'):
@@ -295,8 +300,8 @@ class DataProvider:
             new_cases_per_rel_constant = self.config.rel_to_constant * (ys / population)
             new_deaths_per_rel_constant = self.config.rel_to_constant * (zs / population)
             # compute case-death ascertaintment
-            case_death_ascertainment = (epi_data['confirmed'].astype(int) /
-                                        epi_data['dead'].astype(int).shift(-9).replace(0, np.nan)).values
+            case_death_ascertainment = (epi_data['confirmed'] /
+                                        epi_data['dead'].shift(-9).replace(0, np.nan)).values
             # upsert processed data
             epidemiology_series['countrycode'] = np.concatenate((
                 epidemiology_series['countrycode'], epi_data['countrycode'].values))
