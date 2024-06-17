@@ -46,13 +46,11 @@ class WaveAnalysisPanel:
             data['mortality_rate'] = np.nan
             data['case_rate'] = np.nan
             data['peak_case_rate'] = np.nan
-            data['testing_response_time'] = np.nan  # days to reach 10 tests per rel_to
             data['t0'] = np.nan
             data['t0_relative'] = np.nan
             data['t0_1_dead'] = np.nan
             data['t0_5_dead'] = np.nan
             data['t0_10_dead'] = np.nan
-            data['testing_available'] = np.nan
             data['rel_to_constant'] = self.config.rel_to_constant
             data['peak_1'] = np.nan  # w
             data['peak_1_per_rel_to'] = np.nan  # w
@@ -64,9 +62,6 @@ class WaveAnalysisPanel:
 
             country_series = self.data_provider.epidemiology_series[
                 self.data_provider.epidemiology_series['countrycode'] == country].reset_index(drop=True)
-            testing_series = self.data_provider.testing[
-                self.data_provider.testing['countrycode'] == country].reset_index(
-                drop=True)
             # skip country if number of observed days is less than the minimum number of days for a wave
             if len(country_series) < self.config.t_sep_a:
                 continue
@@ -102,7 +97,6 @@ class WaveAnalysisPanel:
                 country_series[country_series['dead'] >= 5]['date'].iloc[0]
             data['t0_10_dead'] = np.nan if len(country_series[country_series['dead'] >= 10]['date']) == 0 else \
                 country_series[country_series['dead'] >= 10]['date'].iloc[0]
-            data['testing_available'] = True if len(country_series['new_tests'].dropna()) > 0 else False
             # if t0 not defined all other metrics make no sense
             if pd.isnull(data['t0_10_dead']):
                 continue
@@ -110,13 +104,6 @@ class WaveAnalysisPanel:
 
 
 
-            if data['testing_available']:
-                data['testing_response_time'] = np.nan if \
-                    len(testing_series[(testing_series['total_tests'] / data['population']) *
-                                       data['rel_to_constant'] >= 10]) == 0 \
-                    else \
-                    (testing_series[(testing_series['total_tests'] / data['population']) *
-                                    data['rel_to_constant'] >= 10]['date'].iloc[0] - data['t0_1_dead']).days
 
             # for each wave we add characteristics
             if (type(peaks_and_troughs) == list) and len(peaks_and_troughs) > 0:
