@@ -145,19 +145,17 @@ class DataProvider:
             if epidemiology is not None:
                 return epidemiology
 
-        epi_table = pd.DataFrame(columns=['countrycode', 'country', 'date', 'confirmed', 'dead'])
-        epi_directory = self.config.oxcovid19db_fetcher_path
-        for filename in os.listdir(epi_directory):
-            if self.in_fetcher_list(filename):
-                file = os.path.join(epi_directory, filename)
-                df = pd.read_csv(file)
-                df['adm_area_1'].replace('', np.nan, inplace=True)
-                df = df.loc[~df['adm_area_1'].notna(), :]
-                df = df[epi_table.columns]
-                epi_table = epi_table.append(df, ignore_index=True)
-        epi_table['date'] = pd.to_datetime(epi_table['date']).dt.date
-        epi_table.dead = pd.to_numeric(epi_table.dead)
-        epi_table.confirmed = pd.to_numeric(epi_table.confirmed)
+        url = "https://srhdpeuwpubsa.blob.core.windows.net/whdh/COVID/WHO-COVID-19-global-data.csv"
+        data = pd.read_csv(url)
+
+        epi_table = pd.DataFrame(
+            columns=["date", "countrycode", "country", "confirmed", "dead"]
+        )
+        epi_table["date"] = pd.to_datetime(data["Date_reported"]).dt.date
+        epi_table["countrycode"] = data["Country_code"]
+        epi_table["country"] = data["Country"]
+        epi_table["confirmed"] = data["Cumulative_cases"]
+        epi_table["dead"] = data["Cumulative_deaths"]
         epi_table.sort_values(by=['countrycode', 'date'], inplace=True)
 
         epi_table = epi_table[epi_table['date'] <= self.end_date] \
@@ -175,6 +173,8 @@ class DataProvider:
         for country in tqdm(epi_table['countrycode'].unique(), desc='Pre-processing Epidemiological Data'):
             data = epi_table[epi_table['countrycode'] == country].set_index('date')
             # cast all dates as datetime date to omit ambiguity
+            if pd.isna(country):
+                continue
             data = data.reindex([x.date() for x in pd.date_range(data.index.values[0], data.index.values[-1])])
             # fill gaps in countrycode
             data[['countrycode', 'country']] = data[['countrycode', 'country']].fillna(method='backfill')
@@ -189,7 +189,6 @@ class DataProvider:
             # fill na with last acceptable value
             data['new_per_day'] = data['new_per_day'].fillna(method='bfill')
             # similarly interpolate death
-            print(data['dead'].dtype)
             data['dead'] = data['dead'].interpolate(method='linear')
             data['dead_per_day'] = data['dead'].diff()
             # data.reset_index(inplace=True)
