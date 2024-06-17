@@ -39,7 +39,7 @@ class DataProvider:
         }
         self.config = config
         self.conn = None
-        self.fetcher_list = ['AUS_C1A', 'BEL_LE', 'DEU_JPGG']
+        self.fetcher_list = ['EU_ZH']
 
     def validation(self, file_name, mode):
         '''
@@ -130,7 +130,7 @@ class DataProvider:
 
     def in_fetcher_list(self, filename):
         filename = filename.split(".")[0]
-        fetcher = filename.split("-")[-1]
+        fetcher = filename.split("_", 1)[1]
         return fetcher in self.fetcher_list
 
     def get_epi_table(self) -> DataFrame:
@@ -146,11 +146,11 @@ class DataProvider:
                 return epidemiology
 
         epi_table = pd.DataFrame(columns=['countrycode', 'country', 'date', 'confirmed', 'dead'])
-        epi_directory = os.path.join(self.config.oxcovid19db_archive_path, './data-epidemiology')
+        epi_directory = self.config.oxcovid19db_fetcher_path
         for filename in os.listdir(epi_directory):
             if self.in_fetcher_list(filename):
                 file = os.path.join(epi_directory, filename)
-                df = pd.read_csv(file, compression='bz2')
+                df = pd.read_csv(file)
                 df['adm_area_1'].replace('', np.nan, inplace=True)
                 df = df.loc[~df['adm_area_1'].notna(), :]
                 df = df[epi_table.columns]

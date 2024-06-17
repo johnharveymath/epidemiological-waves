@@ -40,6 +40,7 @@ class Config:
         self.data_path = os.path.abspath(os.path.join(self.base_path, '../data'))
         self.cache_path = os.path.abspath(os.path.join(self.base_path, '../cache'))
         self.oxcovid19db_archive_path = os.path.abspath(os.path.join(self.base_path, '../../data-archive'))
+        self.oxcovid19db_fetcher_path = os.path.abspath(os.path.join(self.base_path, '../../fetchers-python/data'))
 
     def prominence_thresholds(self, field):
         if field == 'new_per_day_smooth':
