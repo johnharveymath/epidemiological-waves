@@ -85,6 +85,7 @@ class DataProvider:
         '''
         PULL/PROCESS DATA 
         '''
+        self.patient_list = self.get_patient_list()
         self.epidemiology = self.get_epi_table()
         self.wbi_table = self.get_wbi_table()
         self.epidemiology_series = self.get_epi_series(
@@ -94,6 +95,16 @@ class DataProvider:
     def get_series(self, country: str, field: str) -> DataFrame:
         return self.epidemiology_series[self.epidemiology_series['countrycode'] == country][
             ['date', field]].dropna().reset_index(drop=True)
+
+    def get_patient_list(self):
+        patient_file = os.path.join(self.config.data_path, 'patient_list.csv')
+        patient_list = pd.read_csv(patient_file)
+        patient_list.replace(to_replace='Turkey', value='Türkiye', inplace=True)
+        patient_list.replace(to_replace='Moldova', value='Republic of Moldova', inplace=True)
+        patient_list.replace(to_replace='Russia', value='Russian Federation', inplace=True)
+        patient_list.replace(to_replace='United Kingdom', value='United Kingdom of Great Britain and Northern Ireland', inplace=True)
+        patient_list.replace(to_replace='Czech Republic', value='Czechia', inplace=True)
+        return patient_list
 
     def get_wbi_data(self, country: str, field: str):
         if len(self.wbi_table[self.wbi_table['countrycode'] == country]) == 0:
@@ -168,12 +179,14 @@ class DataProvider:
         epidemiology.new_per_day = pd.to_numeric(epidemiology.new_per_day)
         epidemiology.dead_per_day = pd.to_numeric(epidemiology.dead_per_day)
         epidemiology.confirmed = pd.to_numeric(epidemiology.confirmed)
+        available_countries = epi_table.country.unique()
         # suppress pandas errors in this loop, where we generate ChainedAssignment warnings
         pd.options.mode.chained_assignment = None
-        for country in tqdm(epi_table['countrycode'].unique(), desc='Pre-processing Epidemiological Data'):
-            data = epi_table[epi_table['countrycode'] == country].set_index('date')
-            # cast all dates as datetime date to omit ambiguity
-            if pd.isna(country):
+        for country_name in tqdm(self.patient_list['Country'].unique(), desc='Pre-processing Epidemiological Data'):
+            data = epi_table[epi_table['country'] == country_name].set_index('date')
+            if len(data) == 0:
+                raise Exception(f"Couldn't find this country {country_name}")
+            if pd.isna(country_name):
                 continue
             data = data.reindex([x.date() for x in pd.date_range(data.index.values[0], data.index.values[-1])])
             # fill gaps in countrycode
