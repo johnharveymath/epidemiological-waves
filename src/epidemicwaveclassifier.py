@@ -59,7 +59,7 @@ class EpidemicWaveClassifier:
 
         # run cross-validation (Sub Algorithm E) to find additional case waves from deaths waves
         cross_validated_cases = case_wavelist.cross_validate(
-            deaths_wavelist, plot=plot, plot_path=self.config.plot_path, title=country)
+            deaths_wavelist, plot=False, plot_path=self.config.plot_path, title=country)
 
         # store output of cross-validation to self.summary_output
         summary = []

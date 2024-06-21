@@ -38,7 +38,7 @@ def plot_final_peaks(results: DataFrame, cases: DataFrame, patient_list: DataFra
     origin_date = cases.date.values[0]
 
     # plot peaks
-    axs.set_title('Waves in cases after validation against deaths')
+    axs.set_title(f'Waves in {country_name} and patient visits')
     axs.plot(cases.new_per_day_smooth.values)
     axs.scatter(results['location'].values, cases.new_per_day_smooth[results['location'].values.astype(int)].values, color='red', marker='o')
 
