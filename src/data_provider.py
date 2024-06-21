@@ -15,7 +15,7 @@ from pandas import DataFrame
 class DataProvider:
     def __init__(self, config):
         self.source = 'WRD_WHO'
-        self.end_date = datetime.date(2021, 7, 1)
+        self.end_date = datetime.date(2022, 12, 31)
         self.ma_window = 14
         self.use_splines = False
         self.smooth = 0.001
@@ -104,6 +104,8 @@ class DataProvider:
         patient_list.replace(to_replace='Russia', value='Russian Federation', inplace=True)
         patient_list.replace(to_replace='United Kingdom', value='United Kingdom of Great Britain and Northern Ireland', inplace=True)
         patient_list.replace(to_replace='Czech Republic', value='Czechia', inplace=True)
+        patient_list['date_covid_onset'] = pd.to_datetime(patient_list['date_covid_onset'], format='%d/%m/%Y').dt.date
+        patient_list['visit_date'] = pd.to_datetime(patient_list['visit_date'], format='%d/%m/%Y').dt.date
         return patient_list
 
     def get_wbi_data(self, country: str, field: str):

@@ -9,6 +9,7 @@ import wavefinder as wf
 
 from data_provider import DataProvider
 from config import Config
+from plot_helper import plot_final_peaks
 
 
 class EpidemicWaveClassifier:
@@ -67,6 +68,8 @@ class EpidemicWaveClassifier:
                               "peak_ind": peak.peak_ind, "y_position": peak.y_position})
             summary.append(peak_data)
         self.summary_output[country] = summary
+        country_name = self.data_provider.epidemiology[self.data_provider.epidemiology.countrycode==country].country.values[0]
+        plot_final_peaks(cross_validated_cases, cases, self.data_provider.patient_list, country, country_name, self.config.plot_path)
         # storing death peaks for later use as well
         summary = []
         for row, peak in deaths_wavelist.peaks_sub_c.iterrows():

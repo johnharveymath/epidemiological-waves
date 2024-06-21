@@ -109,7 +109,7 @@ def plot_final_peaks(input_wavelist: WaveList, results: DataFrame, filename: str
 
     fig, axs = plt.subplots(nrows=1, ncols=1)
     # plot peaks from sub_e
-    axs.set_title('Waves in cases after validation against deaths')
+    axs.set_title('Waves in original series after validation against second series')
     axs.plot(input_wavelist.raw_data.values)
     axs.scatter(results['location'].values,
                       input_wavelist.raw_data.values[
