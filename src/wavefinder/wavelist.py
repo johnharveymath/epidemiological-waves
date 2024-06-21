@@ -166,7 +166,7 @@ class WaveList:
 
         # plot the results if required
         if plot:
-            waveplotter.plot_cross_validator(self, reference_wavelist, results, title, plot_path)
+            waveplotter.plot_final_peaks(self, results, title, plot_path)
 
         self.peaks_cross_validated = results
 

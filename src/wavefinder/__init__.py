@@ -18,6 +18,6 @@ PACKAGE CONTENTS
 """
 
 from wavefinder.wavelist import WaveList
-from wavefinder.waveplotter import plot_peaks, plot_cross_validator
+from wavefinder.waveplotter import plot_peaks, plot_cross_validator, plot_final_peaks
 
-__all__ = ['WaveList', 'plot_peaks', 'plot_cross_validator']
+__all__ = ['WaveList', 'plot_peaks', 'plot_cross_validator', 'plot_final_peaks']

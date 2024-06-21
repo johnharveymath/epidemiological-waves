@@ -60,10 +60,6 @@ class EpidemicWaveClassifier:
         cross_validated_cases = case_wavelist.cross_validate(
             deaths_wavelist, plot=plot, plot_path=self.config.plot_path, title=country)
 
-        # compute plots
-        if plot:
-            wf.plot_peaks([case_wavelist, deaths_wavelist], country, save, self.config.plot_path)
-
         # store output of cross-validation to self.summary_output
         summary = []
         for row, peak in cross_validated_cases.iterrows():

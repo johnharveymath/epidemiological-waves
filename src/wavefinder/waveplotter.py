@@ -93,3 +93,28 @@ def plot_peaks(wavelists: list, title: str, save: bool, plot_path: str):
     if save:
         plt.savefig(os.path.join(plot_path, title + '.png'))
         plt.close('all')
+
+def plot_final_peaks(input_wavelist: WaveList, results: DataFrame, filename: str,
+                         plot_path: str):
+    """
+    Plots how additional peaks are imputed in input_wavelist from reference_wavelist by WaveCrossValidator
+
+    Parameters:
+        input_wavelist (WaveList): The original WaveList objects in which additional peaks and troughs are to be
+        imputed.
+        results (DataFrame): The peaks and troughs found in the input_wavelist after cross-validation.
+        filename (str): The filename to save the plot.
+        plot_path (str): The path to save the plot.
+    """
+
+    fig, axs = plt.subplots(nrows=1, ncols=1)
+    # plot peaks from sub_e
+    axs.set_title('Waves in cases after validation against deaths')
+    axs.plot(input_wavelist.raw_data.values)
+    axs.scatter(results['location'].values,
+                      input_wavelist.raw_data.values[
+                          results['location'].values.astype(int)], color='red', marker='o')
+
+    fig.tight_layout()
+    plt.savefig(os.path.join(plot_path, filename + '_cross_validated.png'))
+    plt.close('all')
