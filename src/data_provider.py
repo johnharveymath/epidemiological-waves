@@ -99,7 +99,6 @@ class DataProvider:
     def get_patient_list(self):
         patient_file = os.path.join(self.config.data_path, 'patient_list.csv')
         patient_list = pd.read_csv(patient_file)
-        patient_list.replace(to_replace='Turkey', value='Türkiye', inplace=True)
         patient_list.replace(to_replace='Moldova', value='Republic of Moldova', inplace=True)
         patient_list.replace(to_replace='Russia', value='Russian Federation', inplace=True)
         patient_list.replace(to_replace='United Kingdom', value='United Kingdom of Great Britain and Northern Ireland', inplace=True)
@@ -125,7 +124,7 @@ class DataProvider:
         full_path = os.path.join(self.config.cache_path, cache_name)
         if self.use_cache and os.path.exists(full_path) and self.validation(file_name, 'load'):
             print(f'Loading data from cache file: {full_path}')
-            df = pd.read_csv(full_path, encoding='utf-8')
+            df = pd.read_csv(full_path)
             if 'date' in df.columns:
                 df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d').dt.date
             return df
@@ -137,7 +136,7 @@ class DataProvider:
             full_path = os.path.join(self.config.cache_path, cache_name)
             print(f'Saving data to cache: {full_path}')
             pathlib.Path(os.path.dirname(full_path)).mkdir(parents=True, exist_ok=True)
-            df.to_csv(full_path, encoding='utf-8')
+            df.to_csv(full_path)
             # also save the config parameters that were used for validating future loads
             self.validation(file_name, 'save')
 
@@ -160,6 +159,7 @@ class DataProvider:
 
         url = "https://srhdpeuwpubsa.blob.core.windows.net/whdh/COVID/WHO-COVID-19-global-data.csv"
         data = pd.read_csv(url)
+        data.loc[data['Country_code']=="TR", "Country"] = "Turkey"
 
         epi_table = pd.DataFrame(
             columns=["date", "countrycode", "country", "confirmed", "dead"]
