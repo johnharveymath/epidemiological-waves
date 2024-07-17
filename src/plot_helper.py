@@ -43,7 +43,7 @@ def plot_final_peaks(results: DataFrame, cases: DataFrame, patient_list: DataFra
     axs.scatter(results['location'].values, cases.new_per_day_smooth[results['location'].values.astype(int)].values, color='red', marker='o')
 
     # plot patients
-    patient_data = patient_list[patient_list['Country']==country_name]
+    patient_data = patient_list if country_name=="Total" else patient_list[patient_list['Country']==country_name]
     visits = (patient_data.visit_date - origin_date).dt.days.values
     constant = [50] * len(visits)
     axs.scatter(visits, constant, color='black', marker='x')

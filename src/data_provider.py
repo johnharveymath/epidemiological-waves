@@ -157,9 +157,14 @@ class DataProvider:
             if epidemiology is not None:
                 return epidemiology
 
+        country_list = self.patient_list['Country'].unique()
+
         url = "https://srhdpeuwpubsa.blob.core.windows.net/whdh/COVID/WHO-COVID-19-global-data.csv"
         data = pd.read_csv(url)
         data.loc[data['Country_code']=="TR", "Country"] = "Turkey"
+
+        mask = data["Country"].isin(country_list)
+        data = data.loc[mask]
 
         epi_table = pd.DataFrame(
             columns=["date", "countrycode", "country", "confirmed", "dead"]
@@ -171,6 +176,12 @@ class DataProvider:
         epi_table["dead"] = data["Cumulative_deaths"]
         epi_table.sort_values(by=['countrycode', 'date'], inplace=True)
 
+        dftotal = epi_table.groupby('date')['confirmed', 'dead'].sum().reset_index()
+        dftotal['countrycode'] = 'ALL'
+        dftotal['country'] = 'Total'
+
+        epi_table = pd.concat([epi_table, dftotal])
+
         epi_table = epi_table[epi_table['date'] <= self.end_date] \
             .reset_index(drop=True)
         # checks for any duplication/conflicts in the timeseries
@@ -181,10 +192,9 @@ class DataProvider:
         epidemiology.new_per_day = pd.to_numeric(epidemiology.new_per_day)
         epidemiology.dead_per_day = pd.to_numeric(epidemiology.dead_per_day)
         epidemiology.confirmed = pd.to_numeric(epidemiology.confirmed)
-        available_countries = epi_table.country.unique()
         # suppress pandas errors in this loop, where we generate ChainedAssignment warnings
         pd.options.mode.chained_assignment = None
-        for country_name in tqdm(self.patient_list['Country'].unique(), desc='Pre-processing Epidemiological Data'):
+        for country_name in tqdm(epi_table['country'].unique(), desc='Pre-processing Epidemiological Data'):
             data = epi_table[epi_table['country'] == country_name].set_index('date')
             if len(data) == 0:
                 raise Exception(f"Couldn't find this country {country_name}")
