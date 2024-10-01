@@ -139,15 +139,6 @@ class WaveAnalysisPanel:
                     # calculate information relating to the wave
                     data['wave_duration_{}'.format(str(i))] = (data['wave_end_{}'.format(str(i))] -
                                                                data['wave_start_{}'.format(str(i))]).days
-                    data['wave_cfr_{}'.format(str(i))] = \
-                        (country_series[country_series['date'] ==
-                                        data['wave_end_{}'.format(str(i))]]['dead'].iloc[0] -
-                         country_series[country_series['date'] ==
-                                        data['wave_start_{}'.format(str(i))]]['dead'].iloc[0]) / \
-                        (country_series[country_series['date'] ==
-                                        data['wave_end_{}'.format(str(i))]]['confirmed'].iloc[0] -
-                         country_series[country_series['date'] ==
-                                        data['wave_start_{}'.format(str(i))]]['confirmed'].iloc[0])
                     continue
             epidemiology_panel = epidemiology_panel.append(data, ignore_index=True)
             continue
