@@ -7,10 +7,10 @@ class Config:
     rel_to_constant = 10000  # for calculating relative to the population
 
     # for waves algorithm
-    abs_prominence_threshold = 45  # minimum prominence
-    rel_prominence_threshold = 0.033  # prominence relative to rel_to_constant
-    rel_prominence_max_threshold = 500  # upper limit on relative prominence
-    prominence_height_threshold = 0.61  # prominence must be above a percentage of the peak height
+    abs_prominence_threshold = 25  # minimum prominence
+    rel_prominence_threshold = 0.01  # prominence relative to rel_to_constant
+    rel_prominence_max_threshold = 300  # upper limit on relative prominence
+    prominence_height_threshold = 0.3  # prominence must be above a percentage of the peak height
     abs_prominence_threshold_dead = 7  # minimum prominence for dead peak detection
     rel_prominence_threshold_dead = 0.01  # prominence threshold for dead rel_to_constant
     rel_prominence_max_threshold_dead = 70  # upper limit on relative prominencce
