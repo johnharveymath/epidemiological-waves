@@ -24,9 +24,11 @@ patient_list = pd.read_csv(os.path.join(config.data_path, 'patient_list.csv'))
 patient_list.replace(to_replace='Czech Republic', value='Czechia', inplace=True)
 patient_list['date_covid_onset'] = pd.to_datetime(patient_list['date_covid_onset'], format='%d/%m/%Y').dt.date
 patient_list['visit_date'] = pd.to_datetime(patient_list['visit_date'], format='%d/%m/%Y').dt.date
+patient_list = patient_list[patient_list.Country != 'Honduras']
 
 # get waves
 waves = pd.read_csv(os.path.join(config.data_path, 'final_waves.csv'))
+waves = waves[waves.country != 'Honduras']
 
 # assign wave to each visit
 patient_list['wave'] = 5 # gives grey colour on plot, good choice for uncategorised
@@ -48,7 +50,7 @@ origin_date = dt.date(2020,1,1)
 axs.set_title(f'Patient visits in each country')
 
 # place the countries in correct order
-countries = waves['country'].iloc[::-1]
+countries = waves['country'].copy().sort_values(ascending=False)
 dummy, = plt.plot([0]*(len(countries)-1),countries[0:-1])
 dummy.remove()
 
